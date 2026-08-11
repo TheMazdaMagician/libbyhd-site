@@ -1,0 +1,53 @@
+{
+  "name": "Libby",
+  "short_name": "Libby",
+  "description": "Your private life librarian — dashboards, chat, tasks, letters, evidence, pain log.",
+  "start_url": "home.html?v=2026-05-06-userid002-osteo",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#070b16",
+  "theme_color": "#070b16",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23070b16' width='192' height='192' rx='42'/><text x='50%' y='56%' font-size='120' font-weight='900' fill='%238ab4f8' text-anchor='middle' dominant-baseline='central' font-family='system-ui'>L</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23070b16' width='512' height='512' rx='112'/><text x='50%' y='56%' font-size='320' font-weight='900' fill='%238ab4f8' text-anchor='middle' dominant-baseline='central' font-family='system-ui'>L</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Home",
+      "short_name": "Home",
+      "url": "home.html?v=2026-05-06-userid002-osteo",
+      "description": "Open Libby Home"
+    },
+    {
+      "name": "Kellsie dashboard",
+      "short_name": "Kellsie",
+      "url": "kellsie.html?v=2026-05-06-userid002-osteo",
+      "description": "Open Kellsie's dashboard"
+    },
+    {
+      "name": "Main Libby",
+      "short_name": "Main",
+      "url": "libby_librarian.html",
+      "description": "Open main Libby chat"
+    },
+    {
+      "name": "Log pain check-in",
+      "short_name": "Pain log",
+      "url": "libby_librarian.html#today",
+      "description": "Log current pain and communication state"
+    }
+  ],
+  "categories": ["productivity", "medical", "utilities"],
+  "prefer_related_applications": false
+}

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Libby Dashboard</title>
+<style>
+body{margin:0;background:#070b16;color:#eef2ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.page{max-width:760px;margin:auto;padding:16px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}a,button{color:#8ab4f8}.hero,.panel,.card{background:#111a2f;border:1px solid #1e2d4d;border-radius:18px;padding:14px;margin-bottom:12px}.card{background:#0b1020}.muted{color:#a7b0c9;font-size:13px}.small{font-size:12px}.title{font-weight:900;font-size:16px}.status{display:inline-block;border:1px solid #1e2d4d;border-radius:999px;padding:3px 8px;font-size:12px;color:#fbbf24}.field{width:100%;box-sizing:border-box;background:#070b16;color:#eef2ff;border:1px solid #1e2d4d;border-radius:10px;padding:10px;margin-top:8px}.btn{border:1px solid #1e2d4d;background:#0b1020;border-radius:10px;padding:10px 12px;font-weight:800}.raw{white-space:pre-wrap;background:#070b16;border:1px solid #1e2d4d;border-radius:10px;padding:10px;max-height:300px;overflow:auto;font-size:11px}.ok{color:#5eead4}.err{color:#f87171}
+</style>
+  <script src="/error-reporter.js" defer></script>
+</head>
+<body>
+<div class="page">
+  <div class="top"><a href="/libby_librarian.html">← Libby</a><button class="btn" onclick="loadDashboard()">Refresh</button></div>
+  <section class="hero"><div class="muted">userID=002 · fail-closed dashboard</div><h1 id="heading">Private support dashboard</h1><p id="sub" class="muted">Public view shows redacted cards only. Unlock is required for private modes.</p><div id="sync" class="small">Loading…</div></section>
+  <section class="panel"><div class="title">Mode</div><select id="mode" class="field"><option value="public_demo">Public/demo</option><option value="shared_household">Shared household</option><option value="trusted_home">Trusted home</option><option value="private_meeting">Private meeting</option><option value="private_raw">Private raw</option></select><input id="unlock" class="field" type="password" placeholder="Unlock code"><button class="btn" onclick="saveAndLoad()">Load</button><button class="btn" onclick="clearUnlock()">Clear</button></section>
+  <section class="panel"><div class="title">Cards</div><div id="cards"></div></section>
+  <section class="panel"><details><summary>API response</summary><pre id="raw" class="raw"></pre></details></section>
+</div>
+<script>
+const USER_ID='002';
+const KEY='libby_dashboard_unlock';
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function setSync(text,cls=''){const el=document.getElementById('sync');el.className='small '+cls;el.textContent=text}
+function saveAndLoad(){localStorage.setItem(KEY,document.getElementById('unlock').value.trim());loadDashboard()}
+function clearUnlock(){localStorage.removeItem(KEY);document.getElementById('unlock').value='';loadDashboard()}
+async function loadDashboard(){
+  const mode=document.getElementById('mode').value;
+  const unlock=localStorage.getItem(KEY)||'';
+  document.getElementById('unlock').value=unlock;
+  setSync('Loading…');
+  try{
+    const headers={accept:'application/json'};
+    if(unlock) headers.Authorization='Bearer '+unlock;
+    const res=await fetch('/api/dashboard/user/'+USER_ID+'?mode='+encodeURIComponent(mode)+'&t='+Date.now(),{headers});
+    const data=await res.json();
+    document.getElementById('raw').textContent=JSON.stringify(data,null,2);
+    document.getElementById('heading').textContent=data.auth&&data.auth.authenticated?'Private dashboard unlocked':'Private support dashboard';
+    document.getElementById('sub').textContent='Rendered mode: '+data.mode+'. '+(data.auth&&data.auth.authenticated?'Authorized private-capable view.':'Guest fail-closed view.');
+    renderCards(data.cards||[],data.auth&&data.auth.authenticated,data.mode);
+    setSync('Loaded '+(data.counts?.rendered||0)+' cards · '+data.mode,data.auth&&data.auth.authenticated?'ok':'');
+  }catch(e){setSync('Failed: '+e.message,'err')}
+}
+function renderCards(cards,unlocked,mode){
+  const box=document.getElementById('cards');
+  if(!cards.length){box.innerHTML='<div class="card"><div class="title">No renderable cards</div><p class="muted">No dashboard records are available for this mode, or private records are locked.</p></div>';return}
+  box.innerHTML=cards.map(card=>'<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="title">'+esc(card.title||'Card')+'</div><p class="muted">'+esc(card.summary_public||card.redacted_summary||card.private_summary||'')+'</p></div><span class="status">'+esc(card.priority||'normal')+'</span></div><p class="small">Status: '+esc(card.status||'open')+'</p>'+(card.next_action?'<p class="small">Next: '+esc(card.next_action)+'</p>':'')+(card.private_locked&&!unlocked?'<p class="muted">Private details locked.</p>':'')+(unlocked&&(mode==='private_raw'||mode==='private_meeting')?'<details><summary>Card object</summary><pre class="raw">'+esc(JSON.stringify(card,null,2))+'</pre></details>':'')+'</div>').join('');
+}
+loadDashboard();
+</script>
+</body>
+</html>

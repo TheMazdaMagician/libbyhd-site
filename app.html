@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libby - Your Medical Timeline Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #764ba2;
+            --success: #51cf66;
+            --danger: #ff6b6b;
+            --warning: #ffd43b;
+            --text-dark: #1a1a1a;
+            --text-light: #666;
+            --bg-light: #f8f9fa;
+            --bg-lighter: #f1f3f5;
+            --border: #e9ecef;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        body.dark-mode {
+            --text-dark: #f1f3f5;
+            --text-light: #adb5bd;
+            --bg-light: #1a1a1a;
+            --bg-lighter: #2d2d2d;
+            --border: #3d3d3d;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: var(--shadow-md);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .sidebar {
+            background: #2d2d2d;
+            color: var(--text-dark);
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .sidebar-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
+        .user-info {
+            font-size: 12px;
+            opacity: 0.9;
+            word-break: break-all;
+            margin-top: 8px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 0;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin: 12px 0;
+        }
+
+        .nav-section-title {
+            padding: 8px 20px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.7;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-dark);
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-lighter);
+            border-left-color: var(--primary);
+            padding-left: 18px;
+        }
+
+        .nav-item.active {
+            background: #f0f4ff;
+            border-left-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        body.dark-mode .nav-item.active {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .nav-item .new-badge {
+            margin-left: auto;
+            background: var(--success);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-secondary {
+            padding: 10px 14px;
+            background: var(--bg-lighter);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: var(--text-dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #ff5252;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-light);
+            overflow: hidden;
+        }
+
+        body.dark-mode .main-content {
+            background: #1a1a1a;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            gap: 20px;
+        }
+
+        body.dark-mode .top-bar {
+            background: #2d2d2d;
+            border-color: var(--border);
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+            white-space: nowrap;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            color: var(--text-dark);
+            transition: all 0.2s ease;
+        }
+
+        body.dark-mode .search-box {
+            background: #3d3d3d;
+            border-color: var(--border);
+            color: var(--text-dark);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .view-toggles {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            padding: 9px 14px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-dark);
+            white-space: nowrap;
+        }
+
+        body.dark-mode .view-btn {
+            background: #3d3d3d;
+            border-color: var(--border);
+            color: var(--text-dark);
+        }
+
+        .view-btn:hover {
+            background: var(--bg-lighter);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .top-bar-right {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: var(--text-dark);
+        }
+
+        body.dark-mode .theme-toggle {
+            background: #3d3d3d;
+            border-color: var(--border);
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-lighter);
+            transform: scale(1.05);
+        }
+
+        /* CONTENT AREA */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px;
+        }
+
+        /* VIEWS */
+        .view {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* WELCOME MODAL */
+        .welcome-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .welcome-modal.hidden {
+            display: none;
+        }
+
+        .welcome-content {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+        }
+
+        body.dark-mode .welcome-content {
+            background: #2d2d2d;
+        }
+
+        .welcome-content h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+        }
+
+        .welcome-content p {
+            font-size: 16px;
+            color: var(--text-light);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .welcome-steps {
+            text-align: left;
+            background: var(--bg-lighter);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        body.dark-mode .welcome-steps {
+            background: #3d3d3d;
+        }
+
+        .welcome-step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: flex-start;
+        }
+
+        .welcome-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .welcome-step-number {
+            background: var(--primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .welcome-step-text {
+            flex: 1;
+        }
+
+        .welcome-step-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .welcome-step-desc {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .welcome-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            flex: 1;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary-outline {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary-outline:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        /* EVENT ITEM */
+        .event-item {
+            background: white;
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 14px;
+            border-left: 4px solid var(--primary);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        body.dark-mode .event-item {
+            background: #2d2d2d;
+            border-color: var(--primary);
+        }
+
+        .event-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .event-item.appointment { border-left-color: #4ecdc4; }
+        .event-item.lab-test { border-left-color: #f7dc6f; }
+        .event-item.imaging { border-left-color: #bb8fce; }
+        .event-item.pharmacy { border-left-color: #f8b88b; }
+        .event-item.procedure { border-left-color: #ff6b6b; }
+        .event-item.other { border-left-color: #85c1e2; }
+
+        .workspace-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.55);
+        }
+
+        .workspace-modal.hidden { display: none; }
+
+        .workspace-modal-card {
+            width: min(620px, 100%);
+            max-height: min(760px, calc(100vh - 40px));
+            overflow: auto;
+            padding: 24px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .workspace-modal-head,
+        .panel-head,
+        .metric-row,
+        .event-header,
+        .event-actions,
+        .modal-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .workspace-modal-head { margin-bottom: 18px; }
+        .workspace-modal-head h2 { font-size: 22px; }
+        .modal-close { border: 0; background: transparent; color: var(--text-light); cursor: pointer; font-size: 24px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .form-field { display: grid; gap: 6px; }
+        .form-field.full { grid-column: 1 / -1; }
+        .form-field label { color: var(--text-light); font-size: 12px; font-weight: 700; }
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 10px 11px;
+            color: var(--text-dark);
+            background: var(--bg-lighter);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font: inherit;
+        }
+        .form-field textarea { min-height: 110px; resize: vertical; }
+        .modal-actions { justify-content: flex-end; margin-top: 20px; }
+        .text-button { border: 0; background: transparent; color: var(--primary); cursor: pointer; font-weight: 700; }
+        .status-note { margin: 0 0 16px; padding: 10px 12px; border-radius: 6px; background: rgba(81, 207, 102, 0.12); color: var(--text-dark); font-size: 13px; }
+        .empty-state { padding: 48px 20px; text-align: center; color: var(--text-light); }
+        .empty-state i { display: block; margin-bottom: 12px; font-size: 44px; opacity: 0.35; }
+        .view-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+        .summary-card { padding: 18px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 8px; }
+        .summary-card h3 { margin-bottom: 6px; font-size: 14px; }
+        .summary-card p { color: var(--text-light); font-size: 13px; line-height: 1.5; }
+        .summary-value { margin: 4px 0; color: var(--primary); font-size: 28px; font-weight: 800; }
+        .event-meta { margin: 8px 0; color: var(--text-light); font-size: 12px; }
+        .event-notes { color: var(--text-light); line-height: 1.5; white-space: pre-wrap; }
+        .event-actions { justify-content: flex-start; margin-top: 14px; }
+        .event-actions .btn-small { border: 1px solid var(--border); background: var(--bg-lighter); color: var(--text-dark); cursor: pointer; }
+        .copy-field { display: flex; gap: 8px; }
+        .copy-field input { flex: 1; }
+
+        @media (max-width: 620px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-field.full { grid-column: auto; }
+            .workspace-modal-card { padding: 18px; }
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .event-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .event-category {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .event-meta {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .event-notes {
+            font-size: 14px;
+            color: var(--text-dark);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .event-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            background: var(--bg-lighter);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            color: var(--text-dark);
+        }
+
+        .btn-small:hover {
+            background: var(--border);
+            transform: translateY(-1px);
+        }
+
+        /* LOADING */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .spinner {
+            border: 4px solid var(--bg-lighter);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                max-height: 200px;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .view-toggles {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .view-btn {
+                width: 100%;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .welcome-content {
+                padding: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- WELCOME MODAL -->
+    <div class="welcome-modal" id="welcomeModal">
+        <div class="welcome-content">
+            <h1>👋 Welcome to Libby</h1>
+            <p>Your personal medical timeline assistant</p>
+
+            <div class="welcome-steps">
+                <div class="welcome-step">
+                    <div class="welcome-step-number">1</div>
+                    <div class="welcome-step-text">
+                        <div class="welcome-step-title">Add Medical Events</div>
+                        <div class="welcome-step-desc">Click the + button to log appointments, tests, and procedures</div>
+                    </div>
+                </div>
+                <div class="welcome-step">
+                    <div class="welcome-step-number">2</div>
+                    <div class="welcome-step-text">
+                        <div class="welcome-step-title">Share Your Email</div>
+                        <div class="welcome-step-desc">Give matthew@libbyhd.org to doctors so they can email updates</div>
+                    </div>
+                </div>
+                <div class="welcome-step">
+                    <div class="welcome-step-number">3</div>
+                    <div class="welcome-step-text">
+                        <div class="welcome-step-title">Use Different Views</div>
+                        <div class="welcome-step-desc">Switch between calendar, timeline, and brain vault to organize your data</div>
+                    </div>
+                </div>
+                <div class="welcome-step">
+                    <div class="welcome-step-number">4</div>
+                    <div class="welcome-step-text">
+                        <div class="welcome-step-title">Export & Share</div>
+                        <div class="welcome-step-desc">Export your timeline as PDF or share with family/lawyers</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="welcome-actions">
+                <button class="btn-primary" onclick="closeWelcome()">Get Started</button>
+                <button class="btn-secondary-outline" onclick="closeWelcome()">Skip Tour</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="workspace-modal hidden" id="workspaceModal" role="dialog" aria-modal="true" aria-labelledby="workspaceModalTitle">
+        <div class="workspace-modal-card">
+            <div class="workspace-modal-head">
+                <h2 id="workspaceModalTitle">Workspace</h2>
+                <button class="modal-close" type="button" onclick="closeWorkspaceModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="workspaceModalBody"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>📋 Libby</h2>
+                <p>Medical Timeline</p>
+                <div class="user-info">
+                    <div id="userEmail">Loading...</div>
+                    <div id="shareEmail" style="margin-top: 4px; font-size: 10px; opacity: 0.7;"></div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">📊 Views</div>
+                    <div class="nav-item active" data-view="list">
+                        <i class="fas fa-list"></i> List View
+                    </div>
+                    <div class="nav-item" data-view="calendar">
+                        <i class="fas fa-calendar"></i> Calendar
+                    </div>
+                    <div class="nav-item" data-view="timeline">
+                        <i class="fas fa-stream"></i> Timeline
+                    </div>
+                    <div class="nav-item" data-view="graph">
+                        <i class="fas fa-project-diagram"></i> Graph
+                    </div>
+                    <div class="nav-item" data-view="brain">
+                        <i class="fas fa-brain"></i> Brain Vault
+                        <span class="new-badge">NEW</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">📈 Analytics</div>
+                    <div class="nav-item" data-view="analytics">
+                        <i class="fas fa-chart-pie"></i> Dashboard
+                    </div>
+                    <div class="nav-item" data-view="network">
+                        <i class="fas fa-network-wired"></i> Network
+                    </div>
+                    <div class="nav-item" data-view="activity">
+                        <i class="fas fa-history"></i> Activity
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">⚙️ Tools</div>
+                    <div class="nav-item" onclick="showExportModal()">
+                        <i class="fas fa-download"></i> Export
+                    </div>
+                    <div class="nav-item" onclick="showShareModal()">
+                        <i class="fas fa-share-alt"></i> Share Timeline
+                    </div>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-secondary" onclick="showSettingsModal()">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="btn-secondary" onclick="showWelcome()">
+                    <i class="fas fa-question-circle"></i> Help
+                </button>
+                <button class="btn-danger" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1 class="page-title" id="pageTitle">Medical Events</h1>
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search events..." onkeyup="filterEvents(this.value)">
+                </div>
+                <div class="top-bar-right">
+                    <div class="view-toggles" id="viewToggles"></div>
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn-primary" onclick="showNewEventModal()" style="padding: 9px 16px; margin: 0;">
+                        <i class="fas fa-plus"></i> New Event
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area" id="contentArea">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.js"></script>
+
+    <script>
+        const EVENTS_KEY = 'libbyhd.events.v1';
+        const PROFILE_KEY = 'libbyhd.profile.v1';
+        const categories = ['Appointment', 'Lab Test', 'Imaging', 'Pharmacy', 'Procedure', 'Other'];
+        let currentUser = { email: 'Local workspace', share_email: '' };
+        let events = [];
+        let currentView = 'list';
+        let searchQuery = '';
+        let editingId = null;
+
+        function clone(value) {
+            return JSON.parse(JSON.stringify(value));
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+        }
+
+        function slug(value) {
+            return String(value || 'other').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        }
+
+        function today() {
+            const date = new Date();
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatDate(value) {
+            if (!value) return 'No date';
+            const date = new Date(`${value}T12:00:00`);
+            return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function saveEvents() {
+            localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
+        }
+
+        function readStoredEvents() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(EVENTS_KEY) || '[]');
+                return Array.isArray(stored) ? stored : [];
+            } catch (_error) {
+                return [];
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+
+        function showWelcome() {
+            document.getElementById('welcomeModal').classList.remove('hidden');
+        }
+
+        function closeWelcome() {
+            document.getElementById('welcomeModal').classList.add('hidden');
+            localStorage.setItem('welcomed', 'true');
+        }
+
+        function openWorkspaceModal(title, body) {
+            document.getElementById('workspaceModalTitle').textContent = title;
+            document.getElementById('workspaceModalBody').innerHTML = body;
+            document.getElementById('workspaceModal').classList.remove('hidden');
+        }
+
+        function closeWorkspaceModal() {
+            document.getElementById('workspaceModal').classList.add('hidden');
+            editingId = null;
+        }
+
+        function loadUser() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+                currentUser = { ...currentUser, ...stored };
+            } catch (_error) { /* keep local defaults */ }
+            document.getElementById('userEmail').textContent = currentUser.displayName || currentUser.email;
+            document.getElementById('shareEmail').textContent = currentUser.share_email ? `Share: ${currentUser.share_email}` : 'Local-first workspace';
+            if (!localStorage.getItem('welcomed')) showWelcome();
+        }
+
+        function loadEvents() {
+            events = readStoredEvents().sort((a, b) => `${b.date || ''}${b.time || ''}`.localeCompare(`${a.date || ''}${a.time || ''}`));
+            renderEvents();
+        }
+
+        function visibleEvents() {
+            const query = searchQuery.trim().toLowerCase();
+            if (!query) return events;
+            return events.filter((event) => [event.title, event.category, event.facility, event.notes, event.date].join(' ').toLowerCase().includes(query));
+        }
+
+        function eventCard(event) {
+            return `<article class="event-item ${slug(event.category)}">
+                <div class="event-header"><h3 class="event-title">${escapeHtml(event.title || event.category || 'Event')}</h3><span class="event-category">${escapeHtml(event.category || 'Other')}</span></div>
+                <div class="event-meta"><i class="fas fa-calendar"></i> ${escapeHtml(formatDate(event.date))} ${event.time ? `<i class="fas fa-clock"></i> ${escapeHtml(event.time)}` : ''} ${event.facility ? `&middot; ${escapeHtml(event.facility)}` : ''}</div>
+                <p class="event-notes">${escapeHtml(event.notes || 'No notes added.')}</p>
+                <div class="event-actions"><button class="btn-small" onclick="editEvent('${escapeHtml(event.id)}')"><i class="fas fa-edit"></i> Edit</button><button class="btn-small" onclick="deleteEvent('${escapeHtml(event.id)}')"><i class="fas fa-trash"></i> Delete</button></div>
+            </article>`;
+        }
+
+        function emptyState(message = 'No events match this view yet.') {
+            return `<div class="empty-state"><i class="fas fa-inbox"></i><p>${escapeHtml(message)}</p><button class="btn-primary" onclick="showNewEventModal()" style="margin-top: 18px;">Create an event</button></div>`;
+        }
+
+        function renderList(items) {
+            return items.length ? items.map(eventCard).join('') : emptyState(events.length ? 'No events match your search.' : 'Start by adding your first medical event.');
+        }
+
+        function renderCalendar(items) {
+            if (!items.length) return emptyState('Your calendar is empty.');
+            const groups = {};
+            items.forEach((event) => { (groups[event.date || 'No date'] ||= []).push(event); });
+            return Object.keys(groups).sort().reverse().map((date) => `<section class="summary-card"><div class="panel-head"><h3>${escapeHtml(formatDate(date))}</h3><span>${groups[date].length} event${groups[date].length === 1 ? '' : 's'}</span></div>${groups[date].map(eventCard).join('')}</section>`).join('');
+        }
+
+        function renderTimeline(items) {
+            if (!items.length) return emptyState('Your timeline is empty.');
+            return `<div style="display:grid;gap:12px;">${items.map((event) => `<div class="summary-card"><div class="event-meta">${escapeHtml(formatDate(event.date))} ${event.time ? `at ${escapeHtml(event.time)}` : ''}</div>${eventCard(event)}</div>`).join('')}</div>`;
+        }
+
+        function renderAnalytics(items) {
+            const byCategory = categories.map((category) => ({ category, count: items.filter((event) => event.category === category).length })).filter((row) => row.count);
+            const facilities = new Set(items.map((event) => event.facility).filter(Boolean)).size;
+            return `<div class="view-grid"><div class="summary-card"><h3>Total events</h3><div class="summary-value">${items.length}</div><p>Saved in this browser.</p></div><div class="summary-card"><h3>Categories</h3><div class="summary-value">${new Set(items.map((event) => event.category)).size}</div><p>Types represented.</p></div><div class="summary-card"><h3>Facilities</h3><div class="summary-value">${facilities}</div><p>Places connected to your records.</p></div></div><div class="summary-card" style="margin-top: 14px;"><div class="panel-head"><h3>Events by category</h3><button class="text-button" onclick="showExportModal()">Export</button></div>${byCategory.length ? byCategory.map((row) => `<div class="metric-row" style="padding: 10px 0;border-bottom:1px solid var(--border);"><span>${escapeHtml(row.category)}</span><strong>${row.count}</strong></div>`).join('') : '<p class="event-meta">Add events to see your breakdown.</p>'}</div>`;
+        }
+
+        function renderNetwork(items) {
+            const groups = {};
+            items.forEach((event) => { const key = event.facility || 'Unassigned'; (groups[key] ||= []).push(event); });
+            return Object.keys(groups).length ? `<div class="view-grid">${Object.entries(groups).map(([name, group]) => `<div class="summary-card"><h3>${escapeHtml(name)}</h3><div class="summary-value">${group.length}</div><p>${escapeHtml(group.map((event) => event.title || event.category).slice(0, 3).join(', '))}</p></div>`).join('')}</div>` : emptyState('Add a facility to connect events in your network.');
+        }
+
+        function renderBrain(items) {
+            return `<div class="summary-card"><div class="panel-head"><h3>Brain Vault</h3><button class="btn-primary" onclick="showNewEventModal()">Add record</button></div><p style="margin-top:10px;line-height:1.6;">A structured, local record of your appointments, tests, procedures, and notes. Use Export to create a portable backup at any time.</p></div><div class="view-grid" style="margin-top:14px;">${items.length ? items.slice(0, 6).map((event) => `<div class="summary-card"><h3>${escapeHtml(event.title || event.category)}</h3><p>${escapeHtml(event.notes || 'No notes added.')}</p><div class="event-meta">${escapeHtml(formatDate(event.date))}</div></div>`).join('') : emptyState('Your Brain Vault is ready for its first record.')}</div>`;
+        }
+
+        function renderActivity(items) {
+            return items.length ? `<div style="display:grid;gap:10px;">${items.map((event) => `<div class="summary-card"><div class="panel-head"><strong>${escapeHtml(event.title || event.category)}</strong><span class="event-meta">${escapeHtml(new Date(event.updatedAt || event.createdAt || Date.now()).toLocaleString())}</span></div><p class="event-meta">${escapeHtml(event.category)} record ${event.updatedAt && event.updatedAt !== event.createdAt ? 'updated' : 'created'}</p></div>`).join('')}</div>` : emptyState('Activity will appear as you add records.');
+        }
+
+        function renderEvents() {
+            const area = document.getElementById('contentArea');
+            const items = visibleEvents();
+            const renderers = { list: renderList, calendar: renderCalendar, timeline: renderTimeline, analytics: renderAnalytics, network: renderNetwork, brain: renderBrain, activity: renderActivity };
+            area.innerHTML = renderers[currentView] ? renderers[currentView](items) : renderList(items);
+        }
+
+        function showNewEventModal() {
+            editingId = null;
+            openWorkspaceModal('Add medical event', `<form onsubmit="saveEvent(event)"><div class="form-grid"><div class="form-field full"><label for="eventTitle">Title</label><input id="eventTitle" name="title" required placeholder="e.g. Neurology appointment"></div><div class="form-field"><label for="eventCategory">Type</label><select id="eventCategory" name="category">${categories.map((category) => `<option>${category}</option>`).join('')}</select></div><div class="form-field"><label for="eventDate">Date</label><input id="eventDate" name="date" type="date" value="${today()}" required></div><div class="form-field"><label for="eventTime">Time</label><input id="eventTime" name="time" type="time"></div><div class="form-field"><label for="eventFacility">Facility or person</label><input id="eventFacility" name="facility" placeholder="Optional"></div><div class="form-field full"><label for="eventNotes">Notes</label><textarea id="eventNotes" name="notes" placeholder="What should you remember?"></textarea></div></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeWorkspaceModal()">Cancel</button><button type="submit" class="btn-primary">Save event</button></div></form>`);
+        }
+
+        function saveEvent(formEvent) {
+            formEvent.preventDefault();
+            const form = formEvent.target;
+            const data = Object.fromEntries(new FormData(form).entries());
+            const now = new Date().toISOString();
+            if (editingId) {
+                events = events.map((event) => event.id === editingId ? { ...event, ...data, updatedAt: now } : event);
+            } else {
+                events.unshift({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...data, createdAt: now, updatedAt: now });
+            }
+            saveEvents();
+            closeWorkspaceModal();
+            loadEvents();
+        }
+
+        function editEvent(id) {
+            const event = events.find((item) => item.id === id);
+            if (!event) return;
+            editingId = id;
+            openWorkspaceModal('Edit medical event', `<form onsubmit="saveEvent(event)"><div class="form-grid"><div class="form-field full"><label for="eventTitle">Title</label><input id="eventTitle" name="title" required value="${escapeHtml(event.title)}"></div><div class="form-field"><label for="eventCategory">Type</label><select id="eventCategory" name="category">${categories.map((category) => `<option ${category === event.category ? 'selected' : ''}>${category}</option>`).join('')}</select></div><div class="form-field"><label for="eventDate">Date</label><input id="eventDate" name="date" type="date" value="${escapeHtml(event.date)}" required></div><div class="form-field"><label for="eventTime">Time</label><input id="eventTime" name="time" type="time" value="${escapeHtml(event.time)}"></div><div class="form-field"><label for="eventFacility">Facility or person</label><input id="eventFacility" name="facility" value="${escapeHtml(event.facility)}"></div><div class="form-field full"><label for="eventNotes">Notes</label><textarea id="eventNotes" name="notes">${escapeHtml(event.notes)}</textarea></div></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeWorkspaceModal()">Cancel</button><button type="submit" class="btn-primary">Save changes</button></div></form>`);
+        }
+
+        function deleteEvent(id) {
+            const event = events.find((item) => item.id === id);
+            if (!event || !window.confirm(`Delete “${event.title || event.category}”?`)) return;
+            events = events.filter((item) => item.id !== id);
+            saveEvents();
+            renderEvents();
+        }
+
+        function filterEvents(query) {
+            searchQuery = query || '';
+            renderEvents();
+        }
+
+        function downloadFile(filename, content, type) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(new Blob([content], { type }));
+            link.download = filename;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        }
+
+        function showExportModal() {
+            openWorkspaceModal('Export your timeline', `<p class="status-note">Your records are currently stored in this browser. Export a backup before clearing browser data.</p><div class="modal-actions"><button class="btn-secondary" onclick="downloadFile('libbyhd-timeline.csv', csvExport(), 'text/csv')"><i class="fas fa-file-csv"></i> CSV</button><button class="btn-primary" onclick="downloadFile('libbyhd-timeline.json', JSON.stringify(events, null, 2), 'application/json')"><i class="fas fa-file-code"></i> JSON backup</button></div>`);
+        }
+
+        function csvExport() {
+            const fields = ['title', 'category', 'date', 'time', 'facility', 'notes'];
+            const quote = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+            return [fields.join(','), ...events.map((event) => fields.map((field) => quote(event[field])).join(','))].join('\n');
+        }
+
+        async function showShareModal() {
+            const shareUrl = `${window.location.origin}${window.location.pathname}`;
+            openWorkspaceModal('Share timeline', `<p class="status-note">This link opens the LibbyHD app on this device. Your private records are not placed in the URL.</p><div class="copy-field"><input id="shareUrl" value="${escapeHtml(shareUrl)}" readonly><button class="btn-primary" onclick="copyShareLink()"><i class="fas fa-copy"></i> Copy</button></div>`);
+        }
+
+        async function copyShareLink() {
+            const input = document.getElementById('shareUrl');
+            try { await navigator.clipboard.writeText(input.value); } catch (_error) { input.select(); document.execCommand('copy'); }
+            input.value = 'Copied to clipboard';
+            setTimeout(() => { if (document.getElementById('shareUrl')) document.getElementById('shareUrl').value = `${window.location.origin}${window.location.pathname}`; }, 1500);
+        }
+
+        function showSettingsModal() {
+            openWorkspaceModal('Workspace settings', `<form onsubmit="saveSettings(event)"><div class="form-grid"><div class="form-field full"><label for="profileName">Your name</label><input id="profileName" name="displayName" value="${escapeHtml(currentUser.displayName || '')}" placeholder="Optional"></div><div class="form-field full"><label for="profileShareEmail">Share email</label><input id="profileShareEmail" name="share_email" type="email" value="${escapeHtml(currentUser.share_email || '')}" placeholder="Optional forwarding address"></div></div><div class="modal-actions"><button type="button" class="btn-secondary" onclick="closeWorkspaceModal()">Cancel</button><button type="submit" class="btn-primary">Save settings</button></div></form><hr style="margin:22px 0;border:0;border-top:1px solid var(--border)"><button class="btn-danger" onclick="clearWorkspaceData()"><i class="fas fa-trash"></i> Clear local records</button>`);
+        }
+
+        function saveSettings(formEvent) {
+            formEvent.preventDefault();
+            currentUser = { ...currentUser, ...Object.fromEntries(new FormData(formEvent.target).entries()) };
+            localStorage.setItem(PROFILE_KEY, JSON.stringify(currentUser));
+            loadUser();
+            closeWorkspaceModal();
+        }
+
+        function clearWorkspaceData() {
+            if (!window.confirm('Clear all records saved in this browser?')) return;
+            events = [];
+            saveEvents();
+            closeWorkspaceModal();
+            renderEvents();
+        }
+
+        function logout() {
+            window.location.href = 'home.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUser();
+            loadEvents();
+            if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+            document.querySelectorAll('.nav-item[data-view]').forEach((item) => item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item[data-view]').forEach((navItem) => navItem.classList.remove('active'));
+                item.classList.add('active');
+                currentView = item.dataset.view;
+                document.getElementById('pageTitle').textContent = item.textContent.trim().replace('NEW', '').trim();
+                renderEvents();
+            }));
+            document.getElementById('workspaceModal').addEventListener('click', (event) => { if (event.target.id === 'workspaceModal') closeWorkspaceModal(); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeWorkspaceModal(); });
+        });
+    </script>
+</body>
+</html>
